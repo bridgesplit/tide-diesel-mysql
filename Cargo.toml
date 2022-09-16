@@ -1,15 +1,16 @@
 [package]
-name = "tide-diesel"
+name = "tide-diesel-mysql"
 version = "0.1.2"
 authors = [
     "Bradford Toney <bradford.toney@gmail.com>",
+    "Bhargava Macha <bhargava@bridgesplit.com>"
 ]
 edition = "2018"
 license = "BlueOak-1.0.0"
-description = "Tide middleware for Diesel pooled connections & transactions."
+description = "Tide middleware for Diesel pooled connections & transactions for Mysql connections."
 readme = "README.md"
-repository = "https://github.com/bluemoon/tide-diesel"
-keywords = ["tide", "middleware", "diesel", "postgres", "transaction"]
+repository = "https://github.com/bridgesplit/tide-diesel-mysql"
+keywords = ["tide", "middleware", "diesel", "mysql", "transaction"]
 categories = [
   "web-programming::http-server"
 ]
@@ -23,7 +24,7 @@ default-features = false
 
 [dependencies.diesel]
 version = "1.4.8"
-features = ["postgres", "extras"]
+features = ["mysql", "serde_json", "extras"]
 
 [dev-dependencies]
 anyhow = "1"
