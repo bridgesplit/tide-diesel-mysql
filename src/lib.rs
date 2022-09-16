@@ -53,6 +53,7 @@ where
     }
 }
 
+
 #[async_trait]
 pub trait DieselRequestExt {
     async fn mysql_conn<'req>(
@@ -62,7 +63,7 @@ pub trait DieselRequestExt {
 }
 
 #[async_trait]
-impl<T: Send + Sync + 'static> DieselRequestExt for Request<T> {
+impl<T: Sync + 'static> DieselRequestExt for Request<T> {
     async fn mysql_conn<'req>(
         &'req self,
     ) -> std::result::Result<PooledMySqlConn, diesel::r2d2::PoolError> {
