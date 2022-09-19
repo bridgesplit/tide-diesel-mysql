@@ -1,13 +1,13 @@
 use async_std::sync::{Mutex, MutexGuard};
 use diesel::{
     r2d2::{ConnectionManager, Pool, PooledConnection},
-    mysql::MysqlConnection
+    MysqlConnection,
 };
 use std::sync::Arc;
 use tide::{utils::async_trait, Middleware, Next, Request};
 
-pub type PooledMySqlConn = PooledConnection<ConnectionManager<MysqlConnection>>;
-pub type PoolMySqlConn = Pool<ConnectionManager<MysqlConnection>>;
+pub type PooledMysqlConn = PooledConnection<ConnectionManager<MysqlConnection>>;
+pub type PoolMysqlConn = Pool<ConnectionManager<MysqlConnection>>;
 
 #[derive(Clone)]
 pub struct DieselMiddleware {
@@ -42,38 +42,41 @@ where
     State: Clone + Send + Sync + 'static,
 {
     async fn handle(&self, mut req: Request<State>, next: Next<'_, State>) -> tide::Result {
-        if req.ext::<Arc<Mutex<PoolMySqlConn>>>().is_some() {
+        if req.ext::<Arc<Mutex<PoolMysqlConn>>>().is_some() {
             return Ok(next.run(req).await);
         }
-
-        let conn: Arc<PoolMySqlConn> = Arc::new(self.pool.clone());
+        let conn: Arc<PoolMysqlConn> = Arc::new(self.pool.clone());
         req.set_ext(conn.clone());
         let res = next.run(req).await;
         Ok(res)
     }
 }
 
-
 #[async_trait]
 pub trait DieselRequestExt {
     async fn mysql_conn<'req>(
         &'req self,
-    ) -> std::result::Result<PooledMySqlConn, diesel::r2d2::PoolError>;
-    async fn mysql_pool_conn<'req>(&'req self) -> MutexGuard<'req, PoolMySqlConn>;
+    ) -> std::result::Result<PooledMysqlConn, diesel::r2d2::PoolError>;
+    async fn mysql_pool_conn<'req>(
+        &'req self,
+    ) -> std::result::Result<&Arc<PoolMysqlConn>, diesel::r2d2::PoolError>;
 }
 
 #[async_trait]
-impl<T: Send + Sync + 'static> DieselRequestExt for Request<T> {
+impl<T: Clone + Send + Sync + 'static> DieselRequestExt for Request<T> {
     async fn mysql_conn<'req>(
         &'req self,
-    ) -> std::result::Result<PooledMySqlConn, diesel::r2d2::PoolError> {
-        let mysql_conn: &Arc<PoolMySqlConn> = self.ext().expect("You must install Diesel middleware");
+    ) -> std::result::Result<PooledMysqlConn, diesel::r2d2::PoolError> {
+        let mysql_conn: &Arc<PoolMysqlConn> =
+            self.ext().expect("You must install Diesel middleware");
         mysql_conn.get()
     }
 
-    async fn mysql_pool_conn<'req>(&'req self) -> MutexGuard<'req, PoolMySqlConn> {
-        let mysql_conn: &Arc<Mutex<PoolMySqlConn>> =
+    async fn mysql_pool_conn<'req>(
+        &'req self,
+    ) -> std::result::Result<&Arc<PoolMysqlConn>, diesel::r2d2::PoolError> {
+        let mysql_conn: &Arc<PoolMysqlConn> =
             self.ext().expect("You must install Diesel middleware");
-        mysql_conn.lock().await
+        Ok(mysql_conn)
     }
 }
