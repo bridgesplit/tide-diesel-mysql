@@ -18,6 +18,7 @@ impl DieselMiddleware {
     pub fn new(db_uri: &'_ str) -> std::result::Result<Self, Box<dyn std::error::Error>> {
         let manager = ConnectionManager::<MysqlConnection>::new(db_uri);
         let mysql_conn = diesel::r2d2::Builder::<ConnectionManager<MysqlConnection>>::new()
+            .max_size(1)
             .build(manager)
             .map_err(|e| Box::new(e))?;
         Ok(Self { pool: mysql_conn })
